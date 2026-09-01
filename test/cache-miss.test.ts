@@ -4,14 +4,7 @@ import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/compone
 import { decodePcm16MonoWav } from "../src/audio";
 import { SoundCycle } from "../src/sound-cycle";
 
-const SOUND_NAMES = [
-	"block-hit-1.wav",
-	"oof-1.wav",
-	"block-hit-2.wav",
-	"oof-2.wav",
-	"block-hit-3.wav",
-	"oof-3.wav",
-] as const;
+const SOUND_NAMES = ["unfa-oof.wav", "unfa-oof-filtered.wav"] as const;
 
 function usage(values: Partial<Usage>): Usage {
 	return {
@@ -41,5 +34,6 @@ describe("cache-miss sound behavior", () => {
 
 		expect(visited).toEqual([...SOUND_NAMES, SOUND_NAMES[0]]);
 		expect(sounds.every(sound => sound.sampleRate === 24_000 && sound.pcm.length > 0)).toBe(true);
+		expect(sounds[1]?.pcm).not.toEqual(sounds[0]?.pcm);
 	});
 });

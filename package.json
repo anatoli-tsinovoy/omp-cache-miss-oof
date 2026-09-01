@@ -1,7 +1,7 @@
 {
   "name": "omp-cache-miss-oof",
   "version": "0.1.0",
-  "description": "Play rotating blocky damage and oof sounds when OMP reports a prompt-cache miss",
+  "description": "Play rotating oof sounds when OMP reports a prompt-cache miss",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -20,7 +20,7 @@
   "scripts": {
     "check": "tsgo -p tsconfig.json --noEmit",
     "test": "bun test",
-    "generate:sounds": "python3 scripts/generate-sounds.py"
+    "generate:sounds": "python3 scripts/generate-filtered-oof.py"
   },
   "omp": {
     "extensions": [

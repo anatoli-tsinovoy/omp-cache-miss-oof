@@ -6,12 +6,8 @@ import { decodePcm16MonoWav, type DecodedSound, startSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
 
 const SOUND_URLS = [
-	new URL("../sounds/block-hit-1.wav", import.meta.url),
-	new URL("../sounds/oof-1.wav", import.meta.url),
-	new URL("../sounds/block-hit-2.wav", import.meta.url),
-	new URL("../sounds/oof-2.wav", import.meta.url),
-	new URL("../sounds/block-hit-3.wav", import.meta.url),
-	new URL("../sounds/oof-3.wav", import.meta.url),
+	new URL("../sounds/unfa-oof.wav", import.meta.url),
+	new URL("../sounds/unfa-oof-filtered.wav", import.meta.url),
 ] as const;
 
 interface UsageBaseline {
