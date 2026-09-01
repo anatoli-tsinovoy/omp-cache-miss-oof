@@ -1,0 +1,43 @@
+{
+  "name": "omp-cache-miss-oof",
+  "version": "0.1.0",
+  "description": "Play rotating blocky damage and oof sounds when OMP reports a prompt-cache miss",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anatoli-tsinovoy/omp-cache-miss-oof.git"
+  },
+  "homepage": "https://github.com/anatoli-tsinovoy/omp-cache-miss-oof#readme",
+  "bugs": "https://github.com/anatoli-tsinovoy/omp-cache-miss-oof/issues",
+  "files": [
+    "src",
+    "sounds",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsgo -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "generate:sounds": "python3 scripts/generate-sounds.py"
+  },
+  "omp": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "engines": {
+    "bun": ">=1.3.14"
+  },
+  "peerDependencies": {
+    "@oh-my-pi/pi-ai": ">=18.0.11",
+    "@oh-my-pi/pi-coding-agent": ">=18.0.11"
+  },
+  "devDependencies": {
+    "@oh-my-pi/pi-ai": "18.0.11",
+    "@oh-my-pi/pi-coding-agent": "18.0.11",
+    "@types/bun": "^1.3.14",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2"
+  }
+}
