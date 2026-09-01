@@ -45,7 +45,7 @@ A sound plays when:
 - the current request writes a replacement cache; and
 - the rewritten plus uncached input contains at least 2,048 tokens.
 
-Like OMP's marker, this intentionally excludes normal fluctuations from implicit best-effort caches. The extension resets its baseline on session navigation, compaction, and model changes. It reacts to live assistant responses; rebuilding historical transcript markers does not replay sounds.
+Like OMP's marker, this intentionally excludes normal fluctuations from implicit best-effort caches. On startup and session navigation, the extension restores its baseline from the active branch so the first live miss matches OMP's marker. Rebuilding historical transcript markers does not replay sounds.
 
 Sound playback uses OMP's `StreamingAudioPlayer`, the same gapless native speaker path used by `omp say`: CoreAudio on macOS, WASAPI on Windows, and PulseAudio with ALSA fallback on Linux.
 
