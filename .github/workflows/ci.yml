@@ -19,7 +19,7 @@ jobs:
           mkdir "$RUNNER_TEMP/plugin-smoke"
           printf '{"name":"plugin-smoke","private":true}' > "$RUNNER_TEMP/plugin-smoke/package.json"
           cd "$RUNNER_TEMP/plugin-smoke"
-          bun install "$RUNNER_TEMP/omp-cache-miss-oof-0.1.0.tgz"
+          bun install "$RUNNER_TEMP/omp-cache-miss-oof-0.1.1.tgz"
           bun -e 'await import("omp-cache-miss-oof/src/index.ts")'
       - run: bun run check
       - run: bun test

@@ -1,6 +1,6 @@
 {
   "name": "omp-cache-miss-oof",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Play rotating oof sounds when OMP reports a prompt-cache miss",
   "type": "module",
   "license": "MIT",
