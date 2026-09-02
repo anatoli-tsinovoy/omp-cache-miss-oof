@@ -1,7 +1,7 @@
+import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 import type { Usage } from "@oh-my-pi/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/components/cache-invalidation-marker";
-import { StreamingAudioPlayer } from "@oh-my-pi/pi-coding-agent/tts/streaming-player";
 import { decodePcm16MonoWav, type DecodedSound, startSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
 
@@ -33,7 +33,7 @@ export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise
 	let baseline: Usage | undefined;
 	let sounds: Promise<DecodedSound[]> | undefined;
 	let cycle: SoundCycle<DecodedSound> | undefined;
-	let playback: StreamingAudioPlayer | undefined;
+	let playback: AudioPlayback | undefined;
 
 	const syncBaseline = (_event: unknown, ctx: ExtensionContext) => {
 		baseline = restoreUsageBaseline(ctx);

@@ -1,4 +1,4 @@
-import { StreamingAudioPlayer } from "@oh-my-pi/pi-coding-agent/tts/streaming-player";
+import { AudioPlayback } from "@oh-my-pi/pi-natives";
 
 export interface DecodedSound {
 	name: string;
@@ -68,14 +68,13 @@ export function decodePcm16MonoWav(name: string, bytes: ArrayBuffer): DecodedSou
 	return { name, pcm, sampleRate };
 }
 
-/** Start playback through the same native player used by `omp say`. */
+/** Start playback through OMP's cross-platform native audio backend. */
 export function startSound(
 	sound: DecodedSound,
-	previous?: StreamingAudioPlayer,
-): { player: StreamingAudioPlayer; done: Promise<void> } {
+	previous?: AudioPlayback,
+): { player: AudioPlayback; done: Promise<void> } {
 	previous?.stop();
-	const player = new StreamingAudioPlayer();
-	player.start(sound.sampleRate);
+	const player = new AudioPlayback(sound.sampleRate);
 	player.write(sound.pcm);
 	return { player, done: player.end() };
 }
