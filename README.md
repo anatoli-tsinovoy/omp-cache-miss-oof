@@ -16,6 +16,7 @@ omp install github:anatoli-tsinovoy/omp-cache-miss-oof
 ```
 
 Restart OMP after installation.
+On Android/Termux, install and configure the Termux:API package so `termux-media-player` is installed and on `PATH`. The extension uses that player only on Android when available; all other platforms retain OMP's native audio backend.
 
 For local development:
 
@@ -47,7 +48,7 @@ A sound plays when:
 
 Like OMP's marker, this intentionally excludes normal fluctuations from implicit best-effort caches. On startup and session navigation, the extension restores its baseline from the active branch so the first live miss matches OMP's marker. Rebuilding historical transcript markers does not replay sounds.
 
-Sound playback uses OMP's `AudioPlayback` native backend: CoreAudio on macOS, WASAPI on Windows, and PulseAudio with ALSA fallback on Linux. The extension relies on OMP's platform packages rather than maintaining its own OS-specific routing.
+Sound playback uses OMP's `AudioPlayback` native backend on supported non-Android platforms: CoreAudio on macOS, WASAPI on Windows, and PulseAudio with ALSA fallback on Linux. On Android, the extension uses `termux-media-player` when it is available on `PATH`.
 
 ## Sound assets
 

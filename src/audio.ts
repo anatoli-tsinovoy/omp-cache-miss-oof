@@ -1,4 +1,4 @@
-import { AudioPlayback } from "@oh-my-pi/pi-natives";
+import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 
 export interface DecodedSound {
 	name: string;
@@ -68,13 +68,81 @@ export function decodePcm16MonoWav(name: string, bytes: ArrayBuffer): DecodedSou
 	return { name, pcm, sampleRate };
 }
 
+export interface Playback {
+	stop(): void;
+}
+
+interface StartedPlayback {
+	player: Playback;
+	done: Promise<void>;
+}
+
+interface TermuxProcess {
+	exited: Promise<number>;
+	stdout: ReadableStream<Uint8Array> | null | undefined;
+	stderr: ReadableStream<Uint8Array> | null | undefined;
+}
+
+interface TermuxSpawnOptions {
+	stdout: "ignore" | "pipe";
+	stderr: "ignore" | "pipe";
+}
+
+type TermuxSpawn = (command: string[], options: TermuxSpawnOptions) => TermuxProcess;
+
+const spawnTermuxProcess: TermuxSpawn = (command, options) => {
+	const process = Bun.spawn(command, options);
+	return {
+		exited: process.exited,
+		stdout: process.stdout as ReadableStream<Uint8Array> | null | undefined,
+		stderr: process.stderr as ReadableStream<Uint8Array> | null | undefined,
+	};
+};
+
+const readTermuxOutput = (stream: ReadableStream<Uint8Array> | null | undefined): Promise<string> =>
+	stream ? new Response(stream).text() : Promise.resolve("");
+
+const combinedTermuxOutput = (stdout: string, stderr: string): string => `${stdout}
+${stderr}`.trim();
+
+const isTermuxFailureDiagnostic = (output: string): boolean => /^(?:Error|Failed)\b/i.test(output);
+
 /** Start playback through OMP's cross-platform native audio backend. */
-export function startSound(
-	sound: DecodedSound,
-	previous?: AudioPlayback,
-): { player: AudioPlayback; done: Promise<void> } {
+export async function startSound(sound: DecodedSound, previous?: Playback): Promise<StartedPlayback> {
 	previous?.stop();
-	const player = new AudioPlayback(sound.sampleRate);
+	const { AudioPlayback: NativeAudioPlayback } = await import("@oh-my-pi/pi-natives");
+	const player: AudioPlayback = new NativeAudioPlayback(sound.sampleRate);
 	player.write(sound.pcm);
 	return { player, done: player.end() };
+}
+
+/** Start playback through Termux's media-player command. */
+export function startTermuxSound(
+	wavPath: string,
+	commandPath: string,
+	durationMs: number,
+	previous?: Playback,
+	spawn: TermuxSpawn = spawnTermuxProcess,
+	delay: (milliseconds: number) => Promise<void> = Bun.sleep,
+): StartedPlayback {
+	previous?.stop();
+	const process = spawn([commandPath, "play", wavPath], { stdout: "pipe", stderr: "pipe" });
+	// Drain both pipes before waiting for exit so a full service pipe cannot
+	// deadlock completion.
+	const stdout = readTermuxOutput(process.stdout);
+	const stderr = readTermuxOutput(process.stderr);
+	const done = Promise.all([process.exited, stdout, stderr]).then(async ([exitCode, stdoutText, stderrText]) => {
+		const output = combinedTermuxOutput(stdoutText, stderrText);
+		if (exitCode !== 0) {
+			throw new Error(output || `${commandPath} play exited with code ${exitCode}`);
+		}
+		if (isTermuxFailureDiagnostic(output)) throw new Error(output);
+		await delay(durationMs);
+	});
+	const player: Playback = {
+		stop: () => {
+			void spawn([commandPath, "stop"], { stdout: "ignore", stderr: "ignore" });
+		},
+	};
+	return { player, done };
 }
