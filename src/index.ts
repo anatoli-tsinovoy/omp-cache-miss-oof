@@ -1,9 +1,8 @@
-import { basename } from "node:path";
-import { fileURLToPath } from "node:url";
+import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 import type { Usage } from "@oh-my-pi/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/components/cache-invalidation-marker";
-import { decodePcm16MonoWav, startSound, startTermuxSound, type DecodedSound, type Playback } from "./audio";
+import { decodePcm16MonoWav, startSound, type DecodedSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
 
 const SOUND_URLS = [
@@ -11,14 +10,11 @@ const SOUND_URLS = [
 	new URL("../sounds/unfa-oof-filtered.wav", import.meta.url),
 ] as const;
 
-const TERMUX_MEDIA_PLAYER = process.platform === "android" ? Bun.which("termux-media-player") : undefined;
-
 async function loadSounds(): Promise<DecodedSound[]> {
 	return await Promise.all(
-		SOUND_URLS.map(async url => {
-			const path = fileURLToPath(url);
-			return decodePcm16MonoWav(basename(path), await Bun.file(url).arrayBuffer());
-		}),
+		SOUND_URLS.map(async url =>
+			decodePcm16MonoWav(url.pathname.split("/").at(-1) ?? url.pathname, await Bun.file(url).arrayBuffer()),
+		),
 	);
 }
 
@@ -38,26 +34,18 @@ function restoreUsageBaseline(ctx: ExtensionContext): Usage | undefined {
 export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise<void>): void {
 	let baseline: Usage | undefined;
 	let sounds: Promise<DecodedSound[]> | undefined;
-	let cycle: SoundCycle<(typeof SOUND_URLS)[number]> | undefined;
-	let playback: Playback | undefined;
+	let cycle: SoundCycle<DecodedSound> | undefined;
+	let playback: AudioPlayback | undefined;
 
 	const syncBaseline = (_event: unknown, ctx: ExtensionContext) => {
 		baseline = restoreUsageBaseline(ctx);
 	};
 
 	const playNext = async (): Promise<void> => {
-		cycle ??= new SoundCycle(SOUND_URLS);
-		const url = cycle.next();
 		sounds ??= loadSounds();
-		const sound = (await sounds)[SOUND_URLS.indexOf(url)];
-		if (!sound) throw new Error(`No decoded sound for ${fileURLToPath(url)}`);
-		let started: { player: Playback; done: Promise<void> };
-		if (TERMUX_MEDIA_PLAYER) {
-			const durationMs = Math.ceil((sound.pcm.length / sound.sampleRate) * 1000);
-			started = startTermuxSound(fileURLToPath(url), TERMUX_MEDIA_PLAYER, durationMs, playback);
-		} else {
-			started = await startSound(sound, playback);
-		}
+		cycle ??= new SoundCycle(await sounds);
+		const sound = cycle.next();
+		const started = await startSound(sound, playback);
 		playback = started.player;
 		try {
 			await started.done;
