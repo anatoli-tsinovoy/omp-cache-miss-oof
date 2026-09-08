@@ -2,7 +2,7 @@
 
 An [Oh My Pi](https://github.com/can1357/oh-my-pi) extension that plays a short sound whenever a live assistant request loses a previously warm explicit prompt cache.
 
-Two OOF effects rotate in a fixed closed cycle:
+By default, two OOF effects rotate in a fixed closed cycle:
 
 1. the selected original OOF
 2. a brighter, pitch-shifted, lightly crushed variation
@@ -34,7 +34,27 @@ Run this slash command inside OMP:
 /cache-miss-oof
 ```
 
-Each invocation plays the next effect and wraps after both sounds.
+Each invocation plays the next effect and wraps through the current roster.
+
+## Configure the audio roster
+
+Point the extension at a directory inside OMP:
+
+```text
+/cache-miss-oof directory ~/Music/cache-miss-sounds
+/cache-miss-oof status
+/cache-miss-oof reset
+```
+
+`directory <path>` validates and loads the directory, then starts a new cycle at the first filename. Relative paths resolve against OMP's current working directory; `~` and paths with spaces (optionally quoted) are supported. Run `/cache-miss-oof` without arguments to play the next sound.
+
+The roster includes regular files directly inside the directory, sorted by filename. Subdirectories, symlinks, and unrelated files are ignored. Supported extensions are `.wav`, `.mp3`, `.ogg`, `.flac`, `.m4a`, `.aac`, `.opus`, `.aiff`, `.aif`, and `.webm`, case-insensitively.
+
+Mono PCM16 WAV files need no additional software. Other formats, including stereo or non-PCM16 WAV, require `ffmpeg` on `PATH` (for example, `brew install ffmpeg` on macOS or `pkg install ffmpeg` on Termux). Audio is decoded into memory, so use short sound effects rather than large music libraries.
+
+An empty directory, unreadable directory, or undecodable supported file leaves the previous roster unchanged. Re-run the directory command to reload files after changing them.
+
+The directory selection is saved with the current OMP session and follows its branch history; it is not a global preference. Resuming a session reloads its audio files from the saved path. `status` shows that path, and `reset` restores the bundled OOF sounds.
 
 ## Detection behavior
 

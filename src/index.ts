@@ -1,9 +1,14 @@
+import { homedir } from "node:os";
+import { resolve } from "node:path";
 import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 import type { Usage } from "@oh-my-pi/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/components/cache-invalidation-marker";
 import { decodePcm16MonoWav, startSound, type DecodedSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
+import { loadDirectorySounds } from "./roster";
+
+const CONFIG_ENTRY = "cache-miss-oof-config";
 
 const SOUND_URLS = [
 	new URL("../sounds/unfa-oof.wav", import.meta.url),
@@ -33,19 +38,47 @@ function restoreUsageBaseline(ctx: ExtensionContext): Usage | undefined {
 
 export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise<void>): void {
 	let baseline: Usage | undefined;
-	let sounds: Promise<DecodedSound[]> | undefined;
-	let cycle: SoundCycle<DecodedSound> | undefined;
+	let directory: string | undefined;
+	let cycle: Promise<SoundCycle<DecodedSound>> | undefined;
 	let playback: AudioPlayback | undefined;
+
+	const replaceRoster = (nextDirectory: string | undefined, sounds?: DecodedSound[]): void => {
+		playback?.stop();
+		playback = undefined;
+		directory = nextDirectory;
+		cycle = sounds ? Promise.resolve(new SoundCycle(sounds)) : undefined;
+	};
 
 	const syncBaseline = (_event: unknown, ctx: ExtensionContext) => {
 		baseline = restoreUsageBaseline(ctx);
+		let restored: string | undefined;
+		for (const entry of ctx.sessionManager.getBranch()) {
+			if (entry.type !== "custom" || entry.customType !== CONFIG_ENTRY) continue;
+			const data = entry.data as { directory?: unknown } | undefined;
+			if (data?.directory === null) restored = undefined;
+			else if (typeof data?.directory === "string") restored = data.directory;
+		}
+		if (restored !== directory) replaceRoster(restored);
 	};
 
 	const playNext = async (): Promise<void> => {
-		sounds ??= loadSounds();
-		cycle ??= new SoundCycle(await sounds);
-		const sound = cycle.next();
+		const pending = cycle ??= (directory ? loadDirectorySounds(directory) : loadSounds())
+			.then(sounds => new SoundCycle(sounds));
+		let roster: SoundCycle<DecodedSound>;
+		try {
+			roster = await pending;
+		} catch (error) {
+			if (cycle === pending) cycle = undefined;
+			throw error;
+		}
+		if (cycle !== pending) return;
+		const sound = roster.next();
 		const started = await startSound(sound, playback);
+		if (cycle !== pending) {
+			started.player.stop();
+			await started.done;
+			return;
+		}
 		playback = started.player;
 		try {
 			await started.done;
@@ -70,6 +103,7 @@ export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise
 	pi.on("session_shutdown", () => {
 		playback?.stop();
 		playback = undefined;
+		cycle = undefined;
 	});
 
 	pi.on("message_end", event => {
@@ -86,10 +120,38 @@ export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise
 	});
 
 	pi.registerCommand("cache-miss-oof", {
-		description: "Play the next cache-miss sound",
-		handler: async (_args, ctx) => {
-			await (playSound ?? playNext)();
-			ctx.ui.notify("Played the next cache-miss sound", "info");
+		description: "Play a sound, or configure: directory <path>, status, reset",
+		handler: async (args, ctx) => {
+			const input = args.trim();
+			try {
+				if (!input) {
+					await (playSound ?? playNext)();
+					ctx.ui.notify("Played the next cache-miss sound", "info");
+				} else if (input === "status") {
+					ctx.ui.notify(`Cache-miss sounds: ${directory ?? "bundled OOF sounds"}`, "info");
+				} else if (input === "reset") {
+					pi.appendEntry(CONFIG_ENTRY, { directory: null });
+					replaceRoster(undefined);
+					ctx.ui.notify("Using bundled OOF sounds", "info");
+				} else if (input.startsWith("directory ")) {
+					let path = input.slice("directory ".length).trim();
+					if ((path.startsWith('"') && path.endsWith('"')) || (path.startsWith("'") && path.endsWith("'"))) {
+						path = path.slice(1, -1);
+					}
+					if (!path) throw new Error("Provide an audio directory");
+					if (path === "~") path = homedir();
+					else if (path.startsWith("~/")) path = resolve(homedir(), path.slice(2));
+					const nextDirectory = resolve(ctx.cwd, path);
+					const sounds = await loadDirectorySounds(nextDirectory);
+					pi.appendEntry(CONFIG_ENTRY, { directory: nextDirectory });
+					replaceRoster(nextDirectory, sounds);
+					ctx.ui.notify(`Using ${sounds.length} cache-miss sounds from ${nextDirectory}`, "info");
+				} else {
+					ctx.ui.notify("Usage: /cache-miss-oof [directory <path> | status | reset]", "warning");
+				}
+			} catch (error) {
+				ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
+			}
 		},
 	});
 }
