@@ -17,10 +17,12 @@ jobs:
         run: |
           bun pm pack --destination "$RUNNER_TEMP"
           archive="$RUNNER_TEMP/omp-cache-miss-oof-$(bun -p 'require("./package.json").version').tgz"
+          host_version="$(bun -p 'require("./package.json").devDependencies["@oh-my-pi/pi-coding-agent"]')"
+          ai_version="$(bun -p 'require("./package.json").devDependencies["@oh-my-pi/pi-ai"]')"
           mkdir "$RUNNER_TEMP/plugin-smoke"
           printf '{"name":"plugin-smoke","private":true}' > "$RUNNER_TEMP/plugin-smoke/package.json"
           cd "$RUNNER_TEMP/plugin-smoke"
-          bun install "$archive"
+          bun install "$archive" "@oh-my-pi/pi-coding-agent@$host_version" "@oh-my-pi/pi-ai@$ai_version"
           bun -e 'await import("omp-cache-miss-oof/src/index.ts")'
       - run: bun run check
       - run: bun test
