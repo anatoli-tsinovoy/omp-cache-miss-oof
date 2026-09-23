@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { AssistantMessage, Usage } from "@oh-my-pi/pi-ai";
-import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/components/cache-invalidation-marker";
+import { detectCacheInvalidation } from "@oh-my-pi/pi-tui/chat/cache-invalidation-marker";
 import type { ExtensionAPI, ExtensionContext, SessionMessageEntry } from "@oh-my-pi/pi-coding-agent";
 import { decodePcm16MonoWav } from "../src/audio";
 import { SoundCycle } from "../src/sound-cycle";
@@ -56,8 +56,8 @@ describe("cache-miss sound behavior", () => {
 		const callbacks = new Map<string, unknown>();
 		const api = {
 			on: (event: string, handler: unknown) => callbacks.set(event, handler),
-			registerCommand: () => {},
-			logger: { warn: () => {} },
+			registerCommand: () => { },
+			logger: { warn: () => { } },
 		} as unknown as ExtensionAPI;
 		let playCount = 0;
 		cacheMissOof(api, async () => {

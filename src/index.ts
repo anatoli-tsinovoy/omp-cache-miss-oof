@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 import type { Usage } from "@oh-my-pi/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { detectCacheInvalidation } from "@oh-my-pi/pi-coding-agent/modes/components/cache-invalidation-marker";
+import { detectCacheInvalidation } from "@oh-my-pi/pi-tui/chat/cache-invalidation-marker";
 import { decodePcm16MonoWav, startSound, type DecodedSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
 import { loadDirectorySounds } from "./roster";

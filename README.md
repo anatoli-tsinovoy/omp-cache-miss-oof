@@ -15,7 +15,7 @@ Both are based on [“Oof” by unfa](https://freesound.org/people/unfa/sounds/7
 omp install github:anatoli-tsinovoy/omp-cache-miss-oof
 ```
 
-Restart OMP after installation.
+Restart OMP after installation. This extension requires OMP 18.2.11 or newer.
 
 On Android/Termux, use an OMP build that includes the shared PulseAudio backend. Install the Termux `pulseaudio` package and start its server before launching OMP (for example, `pkg install pulseaudio` followed by `pulseaudio --start --exit-idle-time=-1`). Set `PULSE_SERVER` only when the server is remote or uses a non-default address. This extension has no `termux-media-player` or Termux:API dependency. Android OMP builds that still use the earlier OpenSL backend must be updated; arbitrary older Android OMP builds are not guaranteed to work.
 
@@ -58,7 +58,7 @@ The directory selection is saved with the current OMP session and follows its br
 
 ## Detection behavior
 
-The extension subscribes to `message_end` and calls OMP's own `detectCacheInvalidation` implementation from `modes/components/cache-invalidation-marker`.
+The extension subscribes to `message_end` and calls OMP's own `detectCacheInvalidation` implementation from `@oh-my-pi/pi-tui/chat/cache-invalidation-marker`.
 
 A sound plays when:
 
