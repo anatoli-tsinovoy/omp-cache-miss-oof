@@ -19,15 +19,14 @@ jobs:
           archive="$RUNNER_TEMP/omp-cache-miss-oof-$(bun -p 'require("./package.json").version').tgz"
           host_version="$(bun -p 'require("./package.json").devDependencies["@oh-my-pi/pi-coding-agent"]')"
           ai_version="$(bun -p 'require("./package.json").devDependencies["@oh-my-pi/pi-ai"]')"
-          tui_version="$(bun -p 'require("./package.json").devDependencies["@oh-my-pi/pi-tui"]')"
           mkdir "$RUNNER_TEMP/plugin-smoke"
           printf '{"name":"plugin-smoke","private":true}' > "$RUNNER_TEMP/plugin-smoke/package.json"
           cd "$RUNNER_TEMP/plugin-smoke"
-          bun install "$archive" "@oh-my-pi/pi-coding-agent@$host_version" "@oh-my-pi/pi-ai@$ai_version" "@oh-my-pi/pi-tui@$tui_version"
+          bun install "$archive" "@oh-my-pi/pi-coding-agent@$host_version" "@oh-my-pi/pi-ai@$ai_version"
           bun -e 'await import("omp-cache-miss-oof/src/index.ts")'
-          mkdir "$RUNNER_TEMP/plugin-peer-smoke"
-          printf '{"name":"plugin-peer-smoke","private":true}' > "$RUNNER_TEMP/plugin-peer-smoke/package.json"
-          cd "$RUNNER_TEMP/plugin-peer-smoke"
+          mkdir "$RUNNER_TEMP/plugin-standalone-smoke"
+          printf '{"name":"plugin-standalone-smoke","private":true}' > "$RUNNER_TEMP/plugin-standalone-smoke/package.json"
+          cd "$RUNNER_TEMP/plugin-standalone-smoke"
           bun install "$archive"
           bun -e 'await import("omp-cache-miss-oof/src/index.ts")'
       - run: bun run check
