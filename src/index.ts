@@ -3,12 +3,21 @@ import { resolve } from "node:path";
 import type { AudioPlayback } from "@oh-my-pi/pi-natives";
 import type { Usage } from "@oh-my-pi/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { detectCacheInvalidation } from "@oh-my-pi/pi-tui/chat/cache-invalidation-marker";
 import { decodePcm16MonoWav, startSound, type DecodedSound } from "./audio";
 import { SoundCycle } from "./sound-cycle";
 import { loadDirectorySounds } from "./roster";
 
 const CONFIG_ENTRY = "cache-miss-oof-config";
+const MIN_CACHE_FOOTPRINT = 2048;
+
+/** Match OMP's explicit-cache warm-to-cold marker without importing its UI renderer. */
+function isCacheMiss(previous: Usage | undefined, current: Usage): boolean {
+	return previous !== undefined
+		&& previous.cacheRead >= MIN_CACHE_FOOTPRINT
+		&& current.cacheRead <= 0
+		&& current.cacheWrite > 0
+		&& current.cacheWrite + current.input >= MIN_CACHE_FOOTPRINT;
+}
 
 const SOUND_URLS = [
 	new URL("../sounds/unfa-oof.wav", import.meta.url),
@@ -113,7 +122,7 @@ export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise
 		const usage = message.usage;
 		if (usage.cacheRead + usage.cacheWrite + usage.input <= 0) return;
 
-		const miss = detectCacheInvalidation(baseline, usage);
+		const miss = isCacheMiss(baseline, usage);
 		baseline = usage;
 
 		if (miss) playNextDetached();

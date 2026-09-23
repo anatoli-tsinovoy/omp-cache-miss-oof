@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import type { AssistantMessage, Usage } from "@oh-my-pi/pi-ai";
-import { detectCacheInvalidation } from "@oh-my-pi/pi-tui/chat/cache-invalidation-marker";
 import type { ExtensionAPI, ExtensionContext, SessionMessageEntry } from "@oh-my-pi/pi-coding-agent";
 import { decodePcm16MonoWav } from "../src/audio";
 import { SoundCycle } from "../src/sound-cycle";
@@ -34,11 +33,7 @@ function assistantMessage(messageUsage: Usage): AssistantMessage {
 }
 
 describe("cache-miss sound behavior", () => {
-	test("OMP's warm-to-cold transition advances through every bundled sound and wraps", async () => {
-		const warm = usage({ cacheRead: 48_000 });
-		const cold = usage({ cacheWrite: 48_500, input: 120 });
-		expect(detectCacheInvalidation(warm, cold)).toEqual({ reprocessedTokens: 48_620 });
-
+	test("bundled sounds rotate and wrap", async () => {
 		const sounds = await Promise.all(
 			SOUND_NAMES.map(async name =>
 				decodePcm16MonoWav(name, await Bun.file(new URL(`../sounds/${name}`, import.meta.url)).arrayBuffer()),
@@ -92,5 +87,28 @@ describe("cache-miss sound behavior", () => {
 
 		await Promise.resolve();
 		expect(playCount).toBe(1);
+
+		// An implicit-cache miss has no replacement write; do not play.
+		sessionStart({ type: "session_start" }, ctx);
+		messageEnd({ type: "message_end", message: assistantMessage(usage({ input: 48_620 })) });
+		await Promise.resolve();
+		expect(playCount).toBe(1);
+
+		// Partial cache reuse means the prefix survived.
+		sessionStart({ type: "session_start" }, ctx);
+		messageEnd({ type: "message_end", message: assistantMessage(usage({ cacheRead: 1, cacheWrite: 48_500 })) });
+		await Promise.resolve();
+		expect(playCount).toBe(1);
+
+		// A cold rewrite below the 2,048-token floor is not a meaningful miss.
+		sessionStart({ type: "session_start" }, ctx);
+		messageEnd({ type: "message_end", message: assistantMessage(usage({ cacheWrite: 2_047 })) });
+		await Promise.resolve();
+		expect(playCount).toBe(1);
+
+		sessionStart({ type: "session_start" }, ctx);
+		messageEnd({ type: "message_end", message: assistantMessage(usage({ cacheWrite: 2_048 })) });
+		await Promise.resolve();
+		expect(playCount).toBe(2);
 	});
 });
