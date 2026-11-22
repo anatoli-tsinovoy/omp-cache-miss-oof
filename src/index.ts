@@ -14,7 +14,7 @@ const MIN_CACHE_FOOTPRINT = 2048;
 function isCacheMiss(previous: Usage | undefined, current: Usage): boolean {
 	return previous !== undefined
 		&& previous.cacheRead >= MIN_CACHE_FOOTPRINT
-		&& current.cacheRead <= 0
+		&& current.cacheRead * 2 < previous.cacheRead
 		&& current.cacheWrite > 0
 		&& current.cacheWrite + current.input >= MIN_CACHE_FOOTPRINT;
 }
@@ -36,6 +36,7 @@ function restoreUsageBaseline(ctx: ExtensionContext): Usage | undefined {
 	const branch = ctx.sessionManager.getBranch();
 	for (let index = branch.length - 1; index >= 0; index--) {
 		const entry = branch[index];
+		if (entry?.type === "reset_boundary") return undefined;
 		if (entry?.type !== "message" || entry.message.role !== "assistant") continue;
 		const message = entry.message;
 		const usage = message.usage;
@@ -109,6 +110,7 @@ export default function cacheMissOof(pi: ExtensionAPI, playSound?: () => Promise
 	pi.on("session_branch", syncBaseline);
 	pi.on("session_tree", syncBaseline);
 	pi.on("session_compact", syncBaseline);
+	pi.on("session_clear", syncBaseline);
 	pi.on("session_shutdown", () => {
 		playback?.stop();
 		playback = undefined;

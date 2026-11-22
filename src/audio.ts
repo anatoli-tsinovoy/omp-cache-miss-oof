@@ -1,4 +1,4 @@
-import type { AudioPlayback } from "@oh-my-pi/pi-natives";
+import { AudioPlayback } from "@oh-my-pi/pi-natives";
 
 export interface DecodedSound {
 	name: string;
@@ -76,9 +76,7 @@ interface StartedPlayback {
 /** Start playback through OMP's cross-platform native audio backend. */
 export async function startSound(sound: DecodedSound, previous?: AudioPlayback): Promise<StartedPlayback> {
 	previous?.stop();
-	// Load the native addon only when playback starts so decoder-only imports stay usable without it.
-	const { AudioPlayback: NativeAudioPlayback } = await import("@oh-my-pi/pi-natives");
-	const player = new NativeAudioPlayback(sound.sampleRate);
+	const player = new AudioPlayback(sound.sampleRate);
 	player.write(sound.pcm);
 	return { player, done: player.end() };
 }

@@ -15,7 +15,7 @@ Both are based on [“Oof” by unfa](https://freesound.org/people/unfa/sounds/7
 omp install github:anatoli-tsinovoy/omp-cache-miss-oof
 ```
 
-Restart OMP after installation. This extension requires OMP 18.0.11 or newer.
+Restart OMP after installation. This extension requires OMP 19.1.0 or newer.
 
 On Android/Termux, use an OMP build that includes the shared PulseAudio backend. Install the Termux `pulseaudio` package and start its server before launching OMP (for example, `pkg install pulseaudio` followed by `pulseaudio --start --exit-idle-time=-1`). Set `PULSE_SERVER` only when the server is remote or uses a non-default address. This extension has no `termux-media-player` or Termux:API dependency. Android OMP builds that still use the earlier OpenSL backend must be updated; arbitrary older Android OMP builds are not guaranteed to work.
 
@@ -63,11 +63,11 @@ The extension subscribes to `message_end` and applies the same explicit-cache wa
 A sound plays when:
 
 - the previous request read at least 2,048 prompt tokens from an explicit cache;
-- the current request reads zero cached tokens;
+- the current request reads less than half as many cached tokens as the previous request;
 - the current request writes a replacement cache; and
 - the rewritten plus uncached input contains at least 2,048 tokens.
 
-Like OMP's marker, this intentionally excludes normal fluctuations from implicit best-effort caches. On startup and session navigation, the extension restores its baseline from the active branch so the first live miss matches OMP's marker. Rebuilding historical transcript markers does not replay sounds.
+Like OMP's marker, this intentionally excludes normal fluctuations from implicit best-effort caches. On startup and session navigation, the extension restores its baseline from the active branch, stopping at a reset boundary; the `session_clear` hook clears the baseline after `/clear`. Rebuilding historical transcript markers does not replay sounds.
 Sound playback uses OMP's `AudioPlayback` native backend on supported platforms: CoreAudio on macOS, shared-mode WASAPI on Windows, and PulseAudio on Linux and Android (with ALSA fallback on Linux). Android intentionally has no media-player fallback.
 
 ## Sound assets
