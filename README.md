@@ -15,7 +15,7 @@ Both are based on [“Oof” by unfa](https://freesound.org/people/unfa/sounds/7
 omp install github:anatoli-tsinovoy/omp-cache-miss-oof
 ```
 
-Restart OMP after installation. This extension requires OMP 19.1.0 or newer.
+Restart OMP after installation. This extension requires OMP 19.2.1 or newer.
 
 On Android/Termux, use an OMP build that includes the shared PulseAudio backend. Install the Termux `pulseaudio` package and start its server before launching OMP (for example, `pkg install pulseaudio` followed by `pulseaudio --start --exit-idle-time=-1`). Set `PULSE_SERVER` only when the server is remote or uses a non-default address. This extension has no `termux-media-player` or Termux:API dependency. Android OMP builds that still use the earlier OpenSL backend must be updated; arbitrary older Android OMP builds are not guaranteed to work.
 
